@@ -29,15 +29,18 @@ namespace QuanLySach
             comboBoxTheLoai.DisplayMember = "TenLoai";
             comboBoxTheLoai.ValueMember = "MaLoai";
 
-            LoadData();
+            //textBoxFind.TextChanged += textBoxFind_TextChanged;
+
+            List<Sach> listSach = model.Sach.ToList();
+            LoadData(listSach);
         }
 
-        private void LoadData()
+        private void LoadData(List<Sach> listSach)
         {
             try
             {
                 dataGridViewMain.Rows.Clear();
-                List<Sach> listSach = model.Sach.ToList();
+                listSach = model.Sach.ToList();
                 foreach (var item in listSach)
                 {
                     int index = dataGridViewMain.Rows.Add();
@@ -62,6 +65,7 @@ namespace QuanLySach
                 {
                     //kiểm tra sách đã tồn tại chưa
                     var ktSach = model.Sach.FirstOrDefault(p => p.MaSach == textBoxIDSach.Text);
+                    List<Sach> listSach = model.Sach.ToList();
                     if (ktSach != null)
                     {
                         MessageBox.Show("ID sách đã tồn tại!");
@@ -79,14 +83,14 @@ namespace QuanLySach
                         model.Sach.Add(addSach);
                         model.SaveChanges();
                         MessageBox.Show("Thêm thành công!");
-                        LoadData();
+                        LoadData(listSach);
                         transaction.Commit();
                     }
 
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Lỗi trong quá trình thêm!");
+                    MessageBox.Show("Vui lòng nhập đầy đủ thông tin sách!");
                     transaction.Rollback();
                 }
             }
@@ -123,13 +127,14 @@ namespace QuanLySach
             {
                 try
                 {
+                    List<Sach> listSach = model.Sach.ToList();
                     Sach updateSach = model.Sach.FirstOrDefault(p => p.MaSach == textBoxIDSach.Text);
                     updateSach.TenSach = textBoxTenSach.Text;
                     updateSach.NamXB = int.Parse(textBoxNamXB.Text);
                     updateSach.MaLoai = int.Parse(comboBoxTheLoai.SelectedValue.ToString());
 
                     model.SaveChanges();
-                    LoadData();
+                    LoadData(listSach);
                     MessageBox.Show("Sửa thành công!");
                     transaction.Commit();
                 }
@@ -147,21 +152,55 @@ namespace QuanLySach
             {
                 try
                 {
+                    List<Sach> listSach = model.Sach.ToList();
                     Sach deleteSach = model.Sach.FirstOrDefault(p => p.MaSach == textBoxIDSach.Text);
                     if(deleteSach != null)
                     {
-                        model.Sach.Remove(deleteSach);
-                        model.SaveChanges();
-                        MessageBox.Show("Xoá thành công!");
-                        LoadData();
-                        transaction.Commit();
-                    }  
+                        DialogResult dialogResult = MessageBox.Show("Bạn có muốn xoá không?","Xoá Sách", MessageBoxButtons.YesNo);
+                        if (dialogResult == DialogResult.Yes)
+                        {
+                            model.Sach.Remove(deleteSach);
+                            model.SaveChanges();
+                            MessageBox.Show("Xoá thành công!");
+                            LoadData(listSach);
+                            transaction.Commit();
+                        }
+                        else
+                        {
+                            return;
+                        }
+                        
+                    }
+                    else
+                    {
+                        MessageBox.Show("Sách cần xoá không tồn tại!");
+                    }
                 }
                 catch (Exception)
                 {
                     MessageBox.Show("Lỗi trong quá trình xoá!");
                     transaction.Rollback();
                 }
+            }
+        }
+
+        private void thongKeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Form2 f2 = new Form2();
+            f2.ShowDialog();
+        }
+
+        private void textBoxFind_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if(e.KeyChar == (char)Keys.Enter)
+            {
+                MessageBox.Show("tét");
+                string searchSach = textBoxFind.Text.Trim().ToLower();
+                List<Sach> filteredSach = model.Sach.Where(p =>
+                                                                p.MaSach.ToLower().Contains(searchSach) ||
+                                                                p.TenSach.ToLower().Contains(searchSach) ||
+                                                                p.NamXB.ToString().Contains(searchSach)).ToList();
+                LoadData(filteredSach);
             }
         }
     }
